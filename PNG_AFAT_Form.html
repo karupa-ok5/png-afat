@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PNG Anaesthesia Facility Assessment Tool | PNGSAI</title>
+<style>
+  :root { --green:#0b5526; --gold:#fed10a; --light-green:#e3f3ea; --text:#141414; --error:#b02621; --border:#ccc; --radius:8px; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;background:#f1f4f1;color:var(--text);font-size:14px}
+  #header{background:var(--green);color:white;padding:16px 20px 12px}
+  #header h1{font-size:18px;font-weight:bold;line-height:1.3}
+  #header .sub{font-size:12px;opacity:.85;margin-top:3px}
+  #header .authors{font-size:12px;opacity:.85;margin-top:2px}
+  .gold-bar{height:5px;background:var(--gold)}
+  #progress-wrap{background:white;padding:10px 20px;border-bottom:1px solid #ddd}
+  #progress-label{font-size:12px;color:#555;margin-bottom:4px}
+  #progress-bar-outer{height:8px;background:#ddd;border-radius:4px;overflow:hidden}
+  #progress-bar-inner{height:100%;background:var(--green);border-radius:4px;transition:width .3s}
+  #tab-wrap{background:white;border-bottom:2px solid var(--green);overflow-x:auto;white-space:nowrap}
+  #tab-wrap button{display:inline-block;padding:8px 12px;font-size:11px;border:none;background:none;cursor:pointer;color:#555;border-bottom:3px solid transparent;transition:all .2s}
+  #tab-wrap button.active{color:var(--green);border-bottom-color:var(--green);font-weight:bold}
+  .section{display:none;padding:16px 20px 100px;max-width:800px;margin:0 auto}
+  .section.active{display:block}
+  .section-header{background:var(--green);color:white;padding:12px 16px;border-radius:var(--radius) var(--radius) 0 0;font-size:15px;font-weight:bold}
+  .section-body{background:white;border-radius:0 0 var(--radius) var(--radius);padding:16px;margin-bottom:16px}
+  .info-box{background:var(--light-green);color:#23492e;border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:16px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-weight:bold;margin-bottom:5px;font-size:13px}
+  .field label .req{color:var(--error)}
+  .field input[type=text],.field input[type=date],.field input[type=email],.field input[type=tel],.field input[type=number],.field select,.field textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fafafa}
+  .field textarea{min-height:80px;resize:vertical}
+  .field select{background:white}
+  .field .hint{font-size:11px;color:#666;margin-top:3px}
+  .radio-group,.check-group{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+  .radio-group label,.check-group label{display:flex;align-items:center;gap:8px;font-weight:normal;font-size:13px;cursor:pointer;padding:6px 10px;border-radius:6px;border:1px solid #e0e0e0;background:#fafafa}
+  .radio-group input,.check-group input{accent-color:var(--green);width:16px;height:16px;flex-shrink:0}
+  .avail-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+  .avail-table th{background:var(--green);color:white;padding:7px 8px;text-align:left;font-size:11px}
+  .avail-table td{padding:6px 8px;border-bottom:1px solid #eee;vertical-align:middle}
+  .avail-table tr:nth-child(even) td{background:#f9f9f9}
+  .avail-table td select{width:100%;padding:4px 6px;font-size:12px;border:1px solid #ccc;border-radius:4px}
+  .avail-table td input[type=number]{width:80px;padding:4px 6px;font-size:12px;border:1px solid #ccc;border-radius:4px}
+  .subsection-title{font-size:13px;font-weight:bold;color:var(--green);margin:18px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--gold)}
+  #nav-bar{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #ddd;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;z-index:100}
+  #nav-bar button{padding:10px 24px;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;border:none}
+  #btn-prev{background:#e0e0e0;color:#333}
+  #btn-next{background:var(--green);color:white}
+  #btn-submit{background:var(--gold);color:var(--text)}
+  #section-counter{font-size:12px;color:#555}
+  #success-screen{display:none;position:fixed;inset:0;background:var(--green);color:white;z-index:200;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+  #success-screen h2{font-size:24px;margin-bottom:12px}
+  #success-screen p{font-size:14px;opacity:.9;max-width:400px;line-height:1.6}
+  #success-screen .tick{font-size:60px;margin-bottom:16px}
+  .error-msg{color:var(--error);font-size:12px;margin-top:3px;display:none}
+  .field.invalid input,.field.invalid select,.field.invalid textarea{border-color:var(--error)}
+  .field.invalid .error-msg{display:block}
+  #spinner{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center}
+  #spinner-box{background:white;border-radius:12px;padding:24px 32px;text-align:center}
+  #spinner-box p{margin-top:10px;font-weight:bold;color:var(--green)}
+  .spin{width:40px;height:40px;border:4px solid #ddd;border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>PNG Anaesthesia Facility Assessment Tool</h1>
+  <div class="sub">WFSA AFAT v2 — Adapted for Papua New Guinea &nbsp;|&nbsp; PNG Society of Anaesthetists &amp; Intensivists (PNGSAI)</div>
+  <div class="authors">Dr Joel Silari &nbsp;/&nbsp; Dr Arvin Karu</div>
+</div>
+<div class="gold-bar"></div>
+
+<div id="progress-wrap">
+  <div id="progress-label">Section 1 of 9 — 11%</div>
+  <div id="progress-bar-outer"><div id="progress-bar-inner" style="width:11%"></div></div>
+</div>
+
+<div id="tab-wrap">
+  <button class="active" onclick="goTo(0)">1. General</button>
+  <button onclick="goTo(1)">2. Infrastructure</button>
+  <button onclick="goTo(2)">3. Workforce</button>
+  <button onclick="goTo(3)">4. Medications</button>
+  <button onclick="goTo(4)">5. Equipment</button>
+  <button onclick="goTo(5)">6. Monitoring</button>
+  <button onclick="goTo(6)">7. Emergency</button>
+  <button onclick="goTo(7)">8. Case Volumes</button>
+  <button onclick="goTo(8)">9. QI &amp; Safety</button>
+</div>
+
+<!-- SECTION 1: GENERAL -->
+<div class="section active" id="sec-0">
+  <div class="section-header">1 &nbsp; General &amp; Administrative Information</div>
+  <div class="section-body">
+    <div class="info-box">Complete this assessment based on <strong>direct observation or reliable facility records</strong>. No patient-identifiable information is collected. Leave any question blank if unsure.</div>
+
+    <div class="field" id="f-assess_date"><label>Date of Assessment <span class="req">*</span></label><input type="date" id="assess_date" required><div class="error-msg">Required</div></div>
+    <div class="field" id="f-assessor_name"><label>Name of Person Completing This Assessment <span class="req">*</span></label><input type="text" id="assessor_name" placeholder="Full name" required><div class="error-msg">Required</div></div>
+    <div class="field"><label>Designation / Role</label><input type="text" id="assessor_role" placeholder="e.g. Anaesthesia Officer, Medical Officer"></div>
+    <div class="field"><label>Phone Number</label><input type="tel" id="assessor_phone" placeholder="+675 ..."></div>
+    <div class="field"><label>Email Address</label><input type="email" id="assessor_email"></div>
+
+    <div class="field" id="f-province">
+      <label>Province <span class="req">*</span></label>
+      <select id="province" required>
+        <option value="">— Select Province —</option>
+        <option>Autonomous Region of Bougainville (AROB)</option><option>Central</option>
+        <option>Chimbu (Simbu)</option><option>Eastern Highlands</option>
+        <option>East New Britain</option><option>East Sepik</option>
+        <option>Enga</option><option>Gulf</option><option>Hela</option>
+        <option>Jiwaka</option><option>Madang</option><option>Manus</option>
+        <option>Milne Bay</option><option>Morobe</option>
+        <option>National Capital District (NCD)</option><option>New Ireland</option>
+        <option>Northern (Oro)</option><option>Southern Highlands</option>
+        <option>Western (Fly)</option><option>West New Britain</option>
+        <option>West Sepik (Sandaun)</option><option>Western Highlands</option>
+      </select>
+      <div class="error-msg">Required</div>
+    </div>
+
+    <div class="field" id="f-facility_name"><label>Healthcare Facility Name <span class="req">*</span></label><input type="text" id="facility_name" required><div class="error-msg">Required</div></div>
+    <div class="field"><label>Town / City</label><input type="text" id="facility_town"></div>
+
+    <div class="field">
+      <label>Facility Level <span class="req">*</span></label>
+      <div class="radio-group" id="rg-facility_level">
+        <label><input type="radio" name="facility_level" value="Health Centre / Clinic"> Health Centre / Clinic</label>
+        <label><input type="radio" name="facility_level" value="District Hospital"> District Hospital</label>
+        <label><input type="radio" name="facility_level" value="Provincial Hospital"> Provincial Hospital</label>
+        <label><input type="radio" name="facility_level" value="Regional Referral Hospital"> Regional Referral Hospital</label>
+        <label><input type="radio" name="facility_level" value="National Referral Hospital"> National Referral Hospital</label>
+      </div>
+      <div class="error-msg" id="err-level">Required</div>
+    </div>
+
+    <div class="field">
+      <label>Facility Type (select all that apply)</label>
+      <div class="check-group">
+        <label><input type="checkbox" name="facility_type" value="Public"> Public (Government)</label>
+        <label><input type="checkbox" name="facility_type" value="Private"> Private</label>
+        <label><input type="checkbox" name="facility_type" value="NGO / Mission / Charity"> NGO / Mission / Church Health</label>
+        <label><input type="checkbox" name="facility_type" value="University Hospital"> University / Teaching Hospital</label>
+      </div>
+    </div>
+
+    <div class="field"><label>Approximate Catchment Population</label><input type="number" id="catchment_pop" min="0" placeholder="Number"></div>
+    <div class="field"><label>Travel time to nearest higher-level facility (hours, by vehicle)</label><input type="number" id="travel_time_hrs" min="0" step="0.5" placeholder="Hours"></div>
+    <div class="field"><label>Number of surgical referrals to higher-level facility per year</label><input type="number" id="referrals_per_year" min="0" placeholder="Number"></div>
+
+    <div class="field">
+      <label>What percentage of patients can reach this hospital within 2 hours?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="access_2hr" value="All (>90%)"> All (&gt;90%)</label>
+        <label><input type="radio" name="access_2hr" value=">50%"> More than 50%</label>
+        <label><input type="radio" name="access_2hr" value="<50%"> Less than 50%</label>
+        <label><input type="radio" name="access_2hr" value="Very few / Never"> Very few / Never</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Age ranges served with surgical/anaesthesia services (select all that apply)</label>
+      <div class="check-group">
+        <label><input type="checkbox" name="age_range" value="Neonate (≤30 days)"> Neonate (≤30 days)</label>
+        <label><input type="checkbox" name="age_range" value="1–12 months"> 1–12 months</label>
+        <label><input type="checkbox" name="age_range" value="1–5 years"> 1–5 years</label>
+        <label><input type="checkbox" name="age_range" value="6–12 years"> 6–12 years</label>
+        <label><input type="checkbox" name="age_range" value="13–18 years"> 13–18 years</label>
+        <label><input type="checkbox" name="age_range" value="Adult (18+)"> Adult (18+)</label>
+        <label><input type="checkbox" name="age_range" value="All ages"> All ages</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Can this facility transfer patients to higher-level care with oxygen and pulse oximetry?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="transfer_capability" value="Yes"> Yes</label>
+        <label><input type="radio" name="transfer_capability" value="No"> No</label>
+        <label><input type="radio" name="transfer_capability" value="Unsure"> Unsure</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Does this facility accept transfers from other health facilities?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="accepts_transfers" value="Yes"> Yes</label>
+        <label><input type="radio" name="accepts_transfers" value="No"> No</label>
+        <label><input type="radio" name="accepts_transfers" value="Unsure"> Unsure</label>
+      </div>
+    </div>
+
+    <div class="field"><label>Additional comments</label><textarea id="general_comments"></textarea></div>
+  </div>
+</div>
+
+<!-- SECTION 2: INFRASTRUCTURE -->
+<div class="section" id="sec-1">
+  <div class="section-header">2 &nbsp; Infrastructure</div>
+  <div class="section-body">
+    <div class="subsection-title">Operating Theatres</div>
+    <div class="field"><label>Total number of operating theatres (OTs)</label><input type="number" id="ot_total" min="0"></div>
+    <div class="field"><label>Number of OTs currently functional</label><input type="number" id="ot_functional" min="0"></div>
+    <div class="field"><label>Number of OTs with general anaesthesia capability</label><input type="number" id="ot_ga_capable" min="0"></div>
+    <div class="field">
+      <label>Are OTs available 24/7 for emergency surgery?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="ot_24hr" value="Yes – in-house"> Yes – in-house 24/7</label>
+        <label><input type="radio" name="ot_24hr" value="Yes – with call-in"> Yes – with call-in arrangement</label>
+        <label><input type="radio" name="ot_24hr" value="Daytime only"> Daytime hours only</label>
+        <label><input type="radio" name="ot_24hr" value="No"> No</label>
+      </div>
+    </div>
+    <div class="field"><label>Number of operating days per week</label><input type="number" id="ot_days_per_week" min="0" max="7"></div>
+
+    <div class="subsection-title">Recovery Room / PACU</div>
+    <div class="field">
+      <label>Is there a designated recovery room / PACU?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="pacu_available" value="Yes"> Yes</label>
+        <label><input type="radio" name="pacu_available" value="No – recover in OT"> No – patients recover in OT</label>
+        <label><input type="radio" name="pacu_available" value="No – direct to ward"> No – transferred directly to ward</label>
+      </div>
+    </div>
+    <div class="field"><label>Number of beds in recovery room</label><input type="number" id="pacu_beds" min="0"></div>
+    <div class="field">
+      <label>Is a trained nurse/anaesthesia provider in recovery at all times during OT hours?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="pacu_nurse" value="Yes, always"> Yes, always</label>
+        <label><input type="radio" name="pacu_nurse" value="Sometimes"> Sometimes</label>
+        <label><input type="radio" name="pacu_nurse" value="No"> No</label>
+      </div>
+    </div>
+
+    <div class="subsection-title">Intensive Care / High Dependency</div>
+    <div class="field">
+      <label>Does this facility have an ICU or HDU?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="icu_available" value="ICU"> Yes – ICU</label>
+        <label><input type="radio" name="icu_available" value="HDU"> Yes – HDU</label>
+        <label><input type="radio" name="icu_available" value="Both ICU and HDU"> Yes – both ICU and HDU</label>
+        <label><input type="radio" name="icu_available" value="No"> No</label>
+      </div>
+    </div>
+    <div class="field"><label>Number of ICU/HDU beds</label><input type="number" id="icu_beds" min="0"></div>
+    <div class="field"><label>Number of ICU/HDU beds with mechanical ventilation</label><input type="number" id="icu_vent_beds" min="0"></div>
+
+    <div class="subsection-title">Utilities</div>
+    <div class="field">
+      <label>Electricity supply to OT</label>
+      <div class="radio-group">
+        <label><input type="radio" name="electricity" value="Reliable mains 24/7"> Reliable mains 24/7</label>
+        <label><input type="radio" name="electricity" value="Mains with frequent outages"> Mains with frequent outages</label>
+        <label><input type="radio" name="electricity" value="Generator backup available"> Generator backup available</label>
+        <label><input type="radio" name="electricity" value="Generator only"> Generator only</label>
+        <label><input type="radio" name="electricity" value="Unreliable / no backup"> Unreliable / no reliable backup</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Piped oxygen supply in OT?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="piped_o2" value="Yes, reliably"> Yes, reliably</label>
+        <label><input type="radio" name="piped_o2" value="Yes, but intermittent"> Yes, but intermittent</label>
+        <label><input type="radio" name="piped_o2" value="No – cylinder only"> No – cylinder only</label>
+        <label><input type="radio" name="piped_o2" value="No oxygen supply"> No oxygen supply</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Running water in OT?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="running_water" value="Yes, reliably"> Yes, reliably</label>
+        <label><input type="radio" name="running_water" value="Sometimes"> Sometimes</label>
+        <label><input type="radio" name="running_water" value="No"> No</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Reliable medication storage (cool, dry, secure)?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="med_storage" value="Yes"> Yes</label>
+        <label><input type="radio" name="med_storage" value="Partially"> Partially</label>
+        <label><input type="radio" name="med_storage" value="No"> No</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Blood bank / safe blood storage at this facility?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="blood_bank" value="Yes – full blood bank"> Yes – full blood bank</label>
+        <label><input type="radio" name="blood_bank" value="Yes – basic storage"> Yes – basic blood storage</label>
+        <label><input type="radio" name="blood_bank" value="No – sourced externally"> No – sourced externally</label>
+        <label><input type="radio" name="blood_bank" value="Not available"> Not available</label>
+      </div>
+    </div>
+    <div class="field"><label>Additional comments</label><textarea id="infra_comments"></textarea></div>
+  </div>
+</div>
+
+<!-- SECTION 3: WORKFORCE -->
+<div class="section" id="sec-2">
+  <div class="section-header">3 &nbsp; Anaesthesia Workforce</div>
+  <div class="section-body">
+    <div class="info-box">Record the number of full-time equivalent (FTE) staff currently providing anaesthesia care at this facility.</div>
+
+    <div class="subsection-title">Staffing Numbers</div>
+    <div class="field"><label>Specialist Anaesthesiologists (FANZCA, FFARCSI or equivalent)</label><input type="number" id="wf_specialist" min="0" placeholder="0"></div>
+    <div class="field">
+      <label>Are any specialists PNG nationals?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="specialist_national" value="Yes – all"> Yes – all</label>
+        <label><input type="radio" name="specialist_national" value="Yes – some"> Yes – some</label>
+        <label><input type="radio" name="specialist_national" value="No – all expatriate"> No – all expatriate/contract</label>
+        <label><input type="radio" name="specialist_national" value="N/A – no specialists"> N/A – no specialists</label>
+      </div>
+    </div>
+    <div class="field"><label>Medical Officers (MOs) providing anaesthesia</label><input type="number" id="wf_mo" min="0" placeholder="0"></div>
+    <div class="field"><label>Anaesthesia Officers (AOs) — Diploma/Certificate trained</label><input type="number" id="wf_ao" min="0" placeholder="0"></div>
+    <div class="field"><label>Clinical Nurse Anaesthetists / Nurse Anaesthesia providers</label><input type="number" id="wf_nurse" min="0" placeholder="0"></div>
+    <div class="field"><label>Trainees rotating through anaesthesia</label><input type="number" id="wf_trainees" min="0" placeholder="0"></div>
+
+    <div class="subsection-title">On-Call &amp; Coverage</div>
+    <div class="field">
+      <label>Is an anaesthesia provider available on-call 24/7 for emergency cases?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="oncall_24hr" value="Yes – in-house 24/7"> Yes – in-house 24/7</label>
+        <label><input type="radio" name="oncall_24hr" value="Yes – on-call from home 24/7"> Yes – on-call from home 24/7</label>
+        <label><input type="radio" name="oncall_24hr" value="Available during day only"> Day time only</label>
+        <label><input type="radio" name="oncall_24hr" value="Irregular"> Irregular / not reliable</label>
+        <label><input type="radio" name="oncall_24hr" value="No anaesthesia provider"> No anaesthesia provider available</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Who typically administers the majority of anaesthesia?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="primary_provider" value="Specialist Anaesthesiologist"> Specialist Anaesthesiologist</label>
+        <label><input type="radio" name="primary_provider" value="Medical Officer"> Medical Officer</label>
+        <label><input type="radio" name="primary_provider" value="Anaesthesia Officer"> Anaesthesia Officer</label>
+        <label><input type="radio" name="primary_provider" value="Clinical Nurse Anaesthetist"> Clinical Nurse Anaesthetist</label>
+        <label><input type="radio" name="primary_provider" value="Surgeon-administered"> Surgeon-administered (local/ketamine)</label>
+        <label><input type="radio" name="primary_provider" value="No dedicated provider"> No dedicated provider</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Current vacancies in the anaesthesia team?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="vacancies" value="No vacancies"> No vacancies</label>
+        <label><input type="radio" name="vacancies" value="1–2 vacancies"> 1–2 vacancies</label>
+        <label><input type="radio" name="vacancies" value="3+ vacancies"> 3+ vacancies</label>
+        <label><input type="radio" name="vacancies" value="Unknown"> Unknown</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Any staff attended formal CME / training in past 2 years?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="cme_recent" value="Yes – all/most staff"> Yes – all/most staff</label>
+        <label><input type="radio" name="cme_recent" value="Yes – some staff"> Yes – some staff</label>
+        <label><input type="radio" name="cme_recent" value="No"> No</label>
+        <label><input type="radio" name="cme_recent" value="Unknown"> Unknown</label>
+      </div>
+    </div>
+    <div class="field"><label>Additional comments</label><textarea id="workforce_comments"></textarea></div>
+  </div>
+</div>
+
+<!-- SECTION 4: MEDICATIONS -->
+<div class="section" id="sec-3">
+  <div class="section-header">4 &nbsp; Medications</div>
+  <div class="section-body">
+    <div class="info-box">For each drug, indicate its availability. "Reliably available" = consistently stocked; "Sometimes" = inconsistent; "Never" = not stocked.</div>
+
+    <div class="subsection-title">Inhalational Agents</div>
+    <table class="avail-table">
+      <tr><th>Drug</th><th>Availability</th></tr>
+      <tr><td>Halothane</td><td><select id="m_halothane"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option><option>Not applicable</option></select></td></tr>
+      <tr><td>Isoflurane</td><td><select id="m_isoflurane"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Sevoflurane</td><td><select id="m_sevoflurane"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Nitrous Oxide (N₂O)</td><td><select id="m_n2o"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option><option>Not applicable</option></select></td></tr>
+    </table>
+
+    <div class="subsection-title">Induction Agents</div>
+    <table class="avail-table">
+      <tr><th>Drug</th><th>Availability</th></tr>
+      <tr><td>Ketamine</td><td><select id="m_ketamine"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Propofol</td><td><select id="m_propofol"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Thiopentone</td><td><select id="m_thiopentone"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Midazolam</td><td><select id="m_midazolam"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+    </table>
+
+    <div class="subsection-title">Muscle Relaxants</div>
+    <table class="avail-table">
+      <tr><th>Drug</th><th>Availability</th></tr>
+      <tr><td>Suxamethonium</td><td><select id="m_sux"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Vecuronium</td><td><select id="m_vecuronium"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Atracurium</td><td><select id="m_atracurium"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Rocuronium</td><td><select id="m_rocuronium"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+    </table>
+
+    <div class="subsection-title">Opioid Analgesics</div>
+    <table class="avail-table">
+      <tr><th>Drug</th><th>Availability</th></tr>
+      <tr><td>Morphine</td><td><select id="m_morphine"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Pethidine</td><td><select id="m_pethidine"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Fentanyl</td><td><select id="m_fentanyl"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Tramadol</td><td><select id="m_tramadol"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+    </table>
+
+    <div class="subsection-title">Reversal Agents</div>
+    <table class="avail-table">
+      <tr><th>Drug</th><th>Availability</th></tr>
+      <tr><td>Neostigmine</td><td><select id="m_neostigmine"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Atropine</td><td><select id="m_atropine"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Flumazenil</td><td><select id="m_flumazenil"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Naloxone</td><td><select id="m_naloxone"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Sugammadex</td><td><select id="m_sugammadex"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+    </table>
+
+    <div class="subsection-title">Local Anaesthetics</div>
+    <table class="avail-table">
+      <tr><th>Drug</th><th>Availability</th></tr>
+      <tr><td>Lignocaine (Lidocaine)</td><td><select id="m_lignocaine"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Bupivacaine</td><td><select id="m_bupivacaine"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Ropivacaine</td><td><select id="m_ropivacaine"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+    </table>
+
+    <div class="subsection-title">Emergency &amp; Cardiovascular Drugs</div>
+    <table class="avail-table">
+      <tr><th>Drug</th><th>Availability</th></tr>
+      <tr><td>Adrenaline (Epinephrine)</td><td><select id="m_adrenaline"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Ephedrine</td><td><select id="m_ephedrine"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Metaraminol</td><td><select id="m_metaraminol"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Noradrenaline</td><td><select id="m_norad"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Hydrocortisone</td><td><select id="m_hydrocortisone"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+    </table>
+
+    <div class="subsection-title">Other Key Medications</div>
+    <table class="avail-table">
+      <tr><th>Drug</th><th>Availability</th></tr>
+      <tr><td>Oxytocin</td><td><select id="m_oxytocin"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>IV Fluids (NS, Hartmann's)</td><td><select id="m_ivfluids"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Dextrose 50%</td><td><select id="m_dextrose50"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Magnesium Sulphate</td><td><select id="m_mgso4"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+      <tr><td>Diazepam / Lorazepam</td><td><select id="m_diazepam"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Never / Not stocked</option></select></td></tr>
+    </table>
+
+    <div class="field" style="margin-top:16px">
+      <label>How are anaesthesia medications procured?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="med_supply" value="Mainly NDOH supply chain"> Mainly PNG NDOH supply chain</label>
+        <label><input type="radio" name="med_supply" value="Mix of NDOH and local purchasing"> Mix of NDOH and local purchasing</label>
+        <label><input type="radio" name="med_supply" value="Mainly local purchasing / donations"> Mainly local purchasing / donations</label>
+        <label><input type="radio" name="med_supply" value="Unknown"> Unknown</label>
+      </div>
+    </div>
+    <div class="field"><label>Additional comments</label><textarea id="med_comments"></textarea></div>
+  </div>
+</div>
+
+<!-- SECTION 5: EQUIPMENT -->
+<div class="section" id="sec-4">
+  <div class="section-header">5 &nbsp; Anaesthesia Equipment</div>
+  <div class="section-body">
+    <div class="info-box">"Functional" = in working order and available for use. Enter quantity where applicable.</div>
+
+    <div class="subsection-title">Anaesthesia Delivery</div>
+    <table class="avail-table">
+      <tr><th>Item</th><th>Status</th><th>Qty</th></tr>
+      <tr><td>Anaesthesia machine (continuous flow)</td><td><select id="eq_machine"><option value="">Select</option><option>Functional and available</option><option>Present but not fully functional</option><option>Not available</option></select></td><td><input type="number" id="eq_machine_n" min="0" placeholder="#"></td></tr>
+      <tr><td>Draw-over vaporizer (OMV, PAC)</td><td><select id="eq_drawover"><option value="">Select</option><option>Functional and available</option><option>Present but not fully functional</option><option>Not available</option></select></td><td><input type="number" id="eq_drawover_n" min="0" placeholder="#"></td></tr>
+      <tr><td>Oxygen concentrator</td><td><select id="eq_o2conc"><option value="">Select</option><option>Functional and available</option><option>Present but not fully functional</option><option>Not available</option></select></td><td><input type="number" id="eq_o2conc_n" min="0" placeholder="#"></td></tr>
+      <tr><td>Oxygen cylinders (E or H size)</td><td><select id="eq_o2cyl"><option value="">Select</option><option>Reliably stocked</option><option>Intermittently available</option><option>Not available</option></select></td><td></td></tr>
+      <tr><td>Mechanical ventilator</td><td><select id="eq_ventilator"><option value="">Select</option><option>Functional and available</option><option>Present but not fully functional</option><option>Not available</option></select></td><td><input type="number" id="eq_vent_n" min="0" placeholder="#"></td></tr>
+    </table>
+
+    <div class="subsection-title">Airway Equipment</div>
+    <table class="avail-table">
+      <tr><th>Item</th><th>Availability</th></tr>
+      <tr><td>Laryngoscope (Macintosh, assorted sizes)</td><td><select id="eq_laryngoscope"><option value="">Select</option><option>Available – adult and paediatric</option><option>Available – adult only</option><option>Available – limited sizes</option><option>Not available</option></select></td></tr>
+      <tr><td>Endotracheal tubes (ETTs)</td><td><select id="eq_ett"><option value="">Select</option><option>Full range available</option><option>Adult sizes only</option><option>Limited sizes</option><option>Not available</option></select></td></tr>
+      <tr><td>Laryngeal Mask Airway (LMA)</td><td><select id="eq_lma"><option value="">Select</option><option>Full range available</option><option>Limited sizes</option><option>Not available</option></select></td></tr>
+      <tr><td>Oropharyngeal airways (Guedel / OPA)</td><td><select id="eq_opa"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Not available</option></select></td></tr>
+      <tr><td>Nasopharyngeal airways</td><td><select id="eq_npa"><option value="">Select</option><option>Available</option><option>Not available</option></select></td></tr>
+      <tr><td>Bag-Valve-Mask (BVM / Ambu bag)</td><td><select id="eq_bvm"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Not available</option></select></td></tr>
+      <tr><td>Face masks (adult and paediatric)</td><td><select id="eq_masks"><option value="">Select</option><option>Full range available</option><option>Adult only</option><option>Limited</option><option>Not available</option></select></td></tr>
+      <tr><td>Stylet / Bougie</td><td><select id="eq_stylet"><option value="">Select</option><option>Available</option><option>Not available</option></select></td></tr>
+      <tr><td>Suction device (electric or manual)</td><td><select id="eq_suction"><option value="">Select</option><option>Functional and available</option><option>Present but unreliable</option><option>Not available</option></select></td></tr>
+    </table>
+
+    <div class="subsection-title">IV Access &amp; Infusion</div>
+    <table class="avail-table">
+      <tr><th>Item</th><th>Availability</th></tr>
+      <tr><td>IV cannulas (various sizes)</td><td><select id="eq_ivaccess"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Not available</option></select></td></tr>
+      <tr><td>Infusion pumps / syringe drivers</td><td><select id="eq_pump"><option value="">Select</option><option>Functional and available</option><option>Present but limited</option><option>Not available</option></select></td></tr>
+      <tr><td>Blood / IV fluid warmer</td><td><select id="eq_warmer"><option value="">Select</option><option>Available</option><option>Not available</option></select></td></tr>
+    </table>
+
+    <div class="subsection-title">Regional Anaesthesia</div>
+    <table class="avail-table">
+      <tr><th>Item</th><th>Availability</th></tr>
+      <tr><td>Spinal needles</td><td><select id="eq_spinal"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Not available</option></select></td></tr>
+      <tr><td>Epidural kit</td><td><select id="eq_epidural"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Not available</option></select></td></tr>
+      <tr><td>Peripheral nerve block needles</td><td><select id="eq_block_needles"><option value="">Select</option><option>Available</option><option>Not available</option></select></td></tr>
+      <tr><td>Ultrasound for nerve blocks</td><td><select id="eq_us_block"><option value="">Select</option><option>Available and used for blocks</option><option>Available but not used for blocks</option><option>Not available</option></select></td></tr>
+    </table>
+    <div class="field" style="margin-top:16px"><label>Additional comments</label><textarea id="equip_comments"></textarea></div>
+  </div>
+</div>
+
+<!-- SECTION 6: MONITORING -->
+<div class="section" id="sec-5">
+  <div class="section-header">6 &nbsp; Monitoring</div>
+  <div class="section-body">
+    <table class="avail-table">
+      <tr><th>Monitor</th><th>Status</th><th>No. Functional</th></tr>
+      <tr><td>Pulse Oximeter (SpO₂)</td><td><select id="mon_spo2"><option value="">Select</option><option>Functional, routinely used</option><option>Present but unreliable</option><option>Not available</option></select></td><td><input type="number" id="mon_spo2_n" min="0" placeholder="#"></td></tr>
+      <tr><td>Non-Invasive Blood Pressure (NIBP)</td><td><select id="mon_nibp"><option value="">Select</option><option>Functional, routinely used</option><option>Present but unreliable</option><option>Not available</option></select></td><td><input type="number" id="mon_nibp_n" min="0" placeholder="#"></td></tr>
+      <tr><td>ECG / Cardiac Monitor</td><td><select id="mon_ecg"><option value="">Select</option><option>Functional, routinely used</option><option>Present but unreliable</option><option>Not available</option></select></td><td><input type="number" id="mon_ecg_n" min="0" placeholder="#"></td></tr>
+      <tr><td>Capnograph (ETCO₂)</td><td><select id="mon_etco2"><option value="">Select</option><option>Functional, routinely used</option><option>Present but unreliable</option><option>Not available</option></select></td><td><input type="number" id="mon_etco2_n" min="0" placeholder="#"></td></tr>
+      <tr><td>Temperature monitor</td><td><select id="mon_temp"><option value="">Select</option><option>Functional, routinely used</option><option>Present but unreliable</option><option>Not available</option></select></td><td><input type="number" id="mon_temp_n" min="0" placeholder="#"></td></tr>
+      <tr><td>Invasive Blood Pressure (IBP / A-line)</td><td><select id="mon_ibp"><option value="">Select</option><option>Functional, routinely used</option><option>Available but rarely used</option><option>Not available</option></select></td><td></td></tr>
+      <tr><td>Central Venous Pressure (CVP)</td><td><select id="mon_cvp"><option value="">Select</option><option>Functional, routinely used</option><option>Available but rarely used</option><option>Not available</option></select></td><td></td></tr>
+      <tr><td>Nerve Stimulator (PNS / TOF)</td><td><select id="mon_pns"><option value="">Select</option><option>Functional, routinely used</option><option>Available but rarely used</option><option>Not available</option></select></td><td></td></tr>
+      <tr><td>Depth of Anaesthesia Monitor (BIS)</td><td><select id="mon_bis"><option value="">Select</option><option>Functional, routinely used</option><option>Available but rarely used</option><option>Not available</option></select></td><td></td></tr>
+      <tr><td>Anaesthetic Gas Analyser</td><td><select id="mon_gasanalyser"><option value="">Select</option><option>Functional, routinely used</option><option>Available but rarely used</option><option>Not available</option></select></td><td></td></tr>
+      <tr><td>Paediatric pulse oximetry probe</td><td><select id="mon_paed_spo2"><option value="">Select</option><option>Functional, routinely used</option><option>Present but unreliable</option><option>Not available</option></select></td><td></td></tr>
+    </table>
+
+    <div class="field" style="margin-top:16px">
+      <label>Is the WHO minimum monitoring standard (SpO₂ + NIBP) met for all general anaesthetics?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="who_monitoring" value="Yes – for all cases"> Yes – for all cases</label>
+        <label><input type="radio" name="who_monitoring" value="Yes – for most cases"> Yes – for most cases</label>
+        <label><input type="radio" name="who_monitoring" value="Only sometimes"> Only sometimes</label>
+        <label><input type="radio" name="who_monitoring" value="No – equipment unavailable"> No – equipment unavailable</label>
+      </div>
+    </div>
+    <div class="field"><label>Additional comments</label><textarea id="monitoring_comments"></textarea></div>
+  </div>
+</div>
+
+<!-- SECTION 7: EMERGENCY -->
+<div class="section" id="sec-6">
+  <div class="section-header">7 &nbsp; Emergency Equipment &amp; Resuscitation</div>
+  <div class="section-body">
+    <div class="subsection-title">Resuscitation</div>
+    <table class="avail-table">
+      <tr><th>Item</th><th>Availability</th></tr>
+      <tr><td>Defibrillator (manual or AED)</td><td><select id="emg_defib"><option value="">Select</option><option>Functional and available</option><option>Present but uncertain function</option><option>Not available</option></select></td></tr>
+      <tr><td>Crash cart / Emergency drug trolley</td><td><select id="emg_crash"><option value="">Select</option><option>Present and regularly checked</option><option>Present but not routinely checked</option><option>Not available</option></select></td></tr>
+      <tr><td>Chest drain / Intercostal catheter set</td><td><select id="emg_chest_drain"><option value="">Select</option><option>Available</option><option>Not available</option></select></td></tr>
+      <tr><td>Intraosseous (IO) access device</td><td><select id="emg_io"><option value="">Select</option><option>Available</option><option>Not available</option></select></td></tr>
+    </table>
+
+    <div class="subsection-title">Difficult Airway Management</div>
+    <table class="avail-table">
+      <tr><th>Item</th><th>Availability</th></tr>
+      <tr><td>Difficult Airway Trolley / Cart</td><td><select id="emg_daw"><option value="">Select</option><option>Present – fully stocked</option><option>Present – partially stocked</option><option>Not available</option></select></td></tr>
+      <tr><td>Video Laryngoscope (C-MAC, GlideScope)</td><td><select id="emg_vl"><option value="">Select</option><option>Functional and available</option><option>Available but not functional</option><option>Not available</option></select></td></tr>
+      <tr><td>Fibreoptic bronchoscope</td><td><select id="emg_fob"><option value="">Select</option><option>Functional and available</option><option>Not available</option></select></td></tr>
+      <tr><td>Surgical airway kit (cricothyroidotomy)</td><td><select id="emg_cric"><option value="">Select</option><option>Available</option><option>Not available</option></select></td></tr>
+    </table>
+
+    <div class="subsection-title">Obstetric &amp; Paediatric Emergencies</div>
+    <table class="avail-table">
+      <tr><th>Item</th><th>Availability</th></tr>
+      <tr><td>Magnesium sulphate (eclampsia management)</td><td><select id="emg_mgso4"><option value="">Select</option><option>Reliably available</option><option>Sometimes available</option><option>Not available</option></select></td></tr>
+      <tr><td>Neonatal resuscitation equipment</td><td><select id="emg_neonatal"><option value="">Select</option><option>Functional and complete</option><option>Present but incomplete</option><option>Not available</option></select></td></tr>
+      <tr><td>Warming device for neonates/paediatrics</td><td><select id="emg_warming"><option value="">Select</option><option>Available</option><option>Not available</option></select></td></tr>
+    </table>
+
+    <div class="field" style="margin-top:16px">
+      <label>Is there a written protocol for can't intubate, can't oxygenate (CICO)?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="cico_protocol" value="Yes – written and accessible"> Yes – written and accessible</label>
+        <label><input type="radio" name="cico_protocol" value="Known but not written"> Known but not formally written</label>
+        <label><input type="radio" name="cico_protocol" value="No"> No</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Malignant Hyperthermia (MH) protocol and dantrolene availability?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="mh_protocol" value="Protocol and dantrolene available"> Protocol and dantrolene available</label>
+        <label><input type="radio" name="mh_protocol" value="Protocol only – no dantrolene"> Protocol only – no dantrolene</label>
+        <label><input type="radio" name="mh_protocol" value="No protocol"> No protocol</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Is blood transfusion readily available during surgery?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="blood_transfusion" value="Yes – on-site blood bank"> Yes – on-site blood bank</label>
+        <label><input type="radio" name="blood_transfusion" value="Yes – arranged on demand"> Yes – arranged on demand</label>
+        <label><input type="radio" name="blood_transfusion" value="Difficult to obtain"> Difficult to obtain</label>
+        <label><input type="radio" name="blood_transfusion" value="Not available"> Not available</label>
+      </div>
+    </div>
+    <div class="field"><label>Additional comments</label><textarea id="emergency_comments"></textarea></div>
+  </div>
+</div>
+
+<!-- SECTION 8: CASE VOLUMES -->
+<div class="section" id="sec-7">
+  <div class="section-header">8 &nbsp; Surgical &amp; Anaesthesia Case Volumes</div>
+  <div class="section-body">
+    <div class="info-box">Provide estimates for the most recent 12-month period. Approximate figures are acceptable.</div>
+
+    <div class="subsection-title">Annual Volume</div>
+    <div class="field"><label>Total anaesthetics administered per year</label><input type="number" id="vol_total" min="0" placeholder="Number"></div>
+    <div class="field"><label>Emergency / unplanned cases per year</label><input type="number" id="vol_emergency" min="0" placeholder="Number"></div>
+    <div class="field"><label>Elective / planned cases per year</label><input type="number" id="vol_elective" min="0" placeholder="Number"></div>
+
+    <div class="subsection-title">Case Mix</div>
+    <table class="avail-table">
+      <tr><th>Category</th><th>Estimated annual number</th></tr>
+      <tr><td>Caesarean sections</td><td><input type="number" id="vol_cs" min="0" placeholder="Number"></td></tr>
+      <tr><td>Other obstetric procedures (EUA, D&amp;C)</td><td><input type="number" id="vol_obs_other" min="0" placeholder="Number"></td></tr>
+      <tr><td>Paediatric cases (&lt;12 years)</td><td><input type="number" id="vol_paed" min="0" placeholder="Number"></td></tr>
+      <tr><td>Neonatal cases (≤30 days)</td><td><input type="number" id="vol_neonatal" min="0" placeholder="Number"></td></tr>
+      <tr><td>Major abdominal surgery</td><td><input type="number" id="vol_abdo" min="0" placeholder="Number"></td></tr>
+      <tr><td>Orthopaedic / trauma surgery</td><td><input type="number" id="vol_ortho" min="0" placeholder="Number"></td></tr>
+      <tr><td>Urology</td><td><input type="number" id="vol_urology" min="0" placeholder="Number"></td></tr>
+      <tr><td>ENT / Head &amp; Neck</td><td><input type="number" id="vol_ent" min="0" placeholder="Number"></td></tr>
+      <tr><td>Cardiothoracic surgery</td><td><input type="number" id="vol_cts" min="0" placeholder="Number"></td></tr>
+      <tr><td>Neurosurgery</td><td><input type="number" id="vol_neuro" min="0" placeholder="Number"></td></tr>
+    </table>
+
+    <div class="subsection-title">Anaesthesia Technique</div>
+    <table class="avail-table">
+      <tr><th>Technique</th><th>Estimated annual number</th></tr>
+      <tr><td>General Anaesthesia (inhalational)</td><td><input type="number" id="vol_ga_inhal" min="0" placeholder="Number"></td></tr>
+      <tr><td>General Anaesthesia (TIVA / IV only)</td><td><input type="number" id="vol_ga_tiva" min="0" placeholder="Number"></td></tr>
+      <tr><td>Spinal Anaesthesia</td><td><input type="number" id="vol_spinal" min="0" placeholder="Number"></td></tr>
+      <tr><td>Epidural Anaesthesia</td><td><input type="number" id="vol_epidural" min="0" placeholder="Number"></td></tr>
+      <tr><td>Peripheral Nerve Blocks</td><td><input type="number" id="vol_block" min="0" placeholder="Number"></td></tr>
+      <tr><td>Ketamine (IM/IV, without intubation)</td><td><input type="number" id="vol_ketamine" min="0" placeholder="Number"></td></tr>
+      <tr><td>Local anaesthesia only (surgeon-administered)</td><td><input type="number" id="vol_la_only" min="0" placeholder="Number"></td></tr>
+    </table>
+
+    <div class="field" style="margin-top:16px">
+      <label>Do you have a reliable anaesthesia/surgical logbook?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="logbook" value="Yes – electronic"> Yes – electronic database</label>
+        <label><input type="radio" name="logbook" value="Yes – paper"> Yes – paper logbook</label>
+        <label><input type="radio" name="logbook" value="Incomplete"> Incomplete / inconsistent records</label>
+        <label><input type="radio" name="logbook" value="No"> No formal logbook</label>
+      </div>
+    </div>
+    <div class="field"><label>Additional comments</label><textarea id="volume_comments"></textarea></div>
+  </div>
+</div>
+
+<!-- SECTION 9: QI & SAFETY -->
+<div class="section" id="sec-8">
+  <div class="section-header">9 &nbsp; Quality Improvement &amp; Patient Safety</div>
+  <div class="section-body">
+    <div class="subsection-title">Safety Practices</div>
+    <div class="field">
+      <label>WHO Surgical Safety Checklist (SSC) used routinely?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="who_ssc" value="Yes – for all cases"> Yes – for all cases</label>
+        <label><input type="radio" name="who_ssc" value="Yes – for most cases"> Yes – for most cases</label>
+        <label><input type="radio" name="who_ssc" value="Sometimes"> Sometimes</label>
+        <label><input type="radio" name="who_ssc" value="No"> No</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Written pre-anaesthesia assessment / consent form used?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="preop_form" value="Yes – for all cases"> Yes – for all cases</label>
+        <label><input type="radio" name="preop_form" value="Yes – for most elective cases"> Yes – for most elective cases</label>
+        <label><input type="radio" name="preop_form" value="Rarely"> Rarely</label>
+        <label><input type="radio" name="preop_form" value="No"> No</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Anaesthesia record / chart completed for each case?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="anaes_record" value="Yes – for all cases"> Yes – for all cases</label>
+        <label><input type="radio" name="anaes_record" value="Yes – for most cases"> Yes – for most cases</label>
+        <label><input type="radio" name="anaes_record" value="Sometimes"> Sometimes</label>
+        <label><input type="radio" name="anaes_record" value="No"> No</label>
+      </div>
+    </div>
+
+    <div class="subsection-title">Quality Improvement Processes</div>
+    <div class="field">
+      <label>Mortality &amp; Morbidity (M&amp;M) meetings held?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="mm_meetings" value="Yes – monthly or more"> Yes – monthly or more</label>
+        <label><input type="radio" name="mm_meetings" value="Yes – quarterly"> Yes – quarterly</label>
+        <label><input type="radio" name="mm_meetings" value="Rarely / ad hoc"> Rarely / ad hoc</label>
+        <label><input type="radio" name="mm_meetings" value="No"> No</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Formal incident reporting system for anaesthesia adverse events?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="incident_reporting" value="Yes – formal electronic"> Yes – formal electronic system</label>
+        <label><input type="radio" name="incident_reporting" value="Yes – paper-based"> Yes – paper-based</label>
+        <label><input type="radio" name="incident_reporting" value="Informal only"> Informal only</label>
+        <label><input type="radio" name="incident_reporting" value="No"> No</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Written anaesthesia protocols / clinical guidelines available in OT?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="protocols_available" value="Yes – up-to-date and accessible"> Yes – up-to-date and accessible</label>
+        <label><input type="radio" name="protocols_available" value="Yes – but outdated"> Yes – but outdated</label>
+        <label><input type="radio" name="protocols_available" value="No"> No</label>
+      </div>
+    </div>
+
+    <div class="subsection-title">Adverse Events (past 12 months)</div>
+    <div class="info-box">Approximate estimates only. Data is de-identified and used for research purposes only.</div>
+    <table class="avail-table">
+      <tr><th>Event</th><th>Approximate no. in past 12 months</th></tr>
+      <tr><td>Known/suspected anaesthesia-related deaths</td><td><input type="number" id="ae_death" min="0" placeholder="0 if none"></td></tr>
+      <tr><td>Major anaesthesia complications (cardiac arrest, hypoxic events)</td><td><input type="number" id="ae_major" min="0" placeholder="Number"></td></tr>
+      <tr><td>Drug errors related to anaesthesia</td><td><input type="number" id="ae_drug" min="0" placeholder="Number"></td></tr>
+      <tr><td>Awareness under anaesthesia (reported cases)</td><td><input type="number" id="ae_awareness" min="0" placeholder="Number"></td></tr>
+      <tr><td>Difficult/failed intubation requiring emergency management</td><td><input type="number" id="ae_daw" min="0" placeholder="Number"></td></tr>
+    </table>
+
+    <div class="field" style="margin-top:16px">
+      <label>PONV (post-operative nausea &amp; vomiting) prevention routinely addressed?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="ponv" value="Yes – routinely"> Yes – routinely</label>
+        <label><input type="radio" name="ponv" value="Sometimes"> Sometimes</label>
+        <label><input type="radio" name="ponv" value="No"> No</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Post-operative pain management actively addressed?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="pain_management" value="Yes – formal protocol"> Yes – formal pain assessment protocol</label>
+        <label><input type="radio" name="pain_management" value="Yes – informally"> Yes – informally</label>
+        <label><input type="radio" name="pain_management" value="Inconsistent"> Inconsistent</label>
+        <label><input type="radio" name="pain_management" value="No"> No</label>
+      </div>
+    </div>
+
+    <div class="subsection-title">Training &amp; Education</div>
+    <div class="field">
+      <label>In-house training programme for anaesthesia staff?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="training_prog" value="Yes – formal structured"> Yes – formal structured programme</label>
+        <label><input type="radio" name="training_prog" value="Yes – informal/case-based"> Yes – informal / case-based teaching</label>
+        <label><input type="radio" name="training_prog" value="No"> No</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Simulation or skills drills conducted at facility?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="simulation" value="Yes – regularly"> Yes – regularly</label>
+        <label><input type="radio" name="simulation" value="Occasionally"> Occasionally</label>
+        <label><input type="radio" name="simulation" value="No"> No</label>
+      </div>
+    </div>
+
+    <div class="subsection-title">Overall Assessment</div>
+    <div class="field">
+      <label>What is the single biggest challenge to safe anaesthesia at your facility?</label>
+      <div class="radio-group">
+        <label><input type="radio" name="biggest_challenge" value="Lack of trained staff"> Lack of trained staff</label>
+        <label><input type="radio" name="biggest_challenge" value="Drug supply shortage"> Drug supply shortage</label>
+        <label><input type="radio" name="biggest_challenge" value="Equipment failure / absence"> Equipment failure / absence</label>
+        <label><input type="radio" name="biggest_challenge" value="Infrastructure (power, oxygen, water)"> Infrastructure (power, oxygen, water)</label>
+        <label><input type="radio" name="biggest_challenge" value="High case volume / workload"> High case volume / workload</label>
+        <label><input type="radio" name="biggest_challenge" value="Lack of protocols / guidelines"> Lack of protocols / guidelines</label>
+        <label><input type="radio" name="biggest_challenge" value="Other"> Other (describe below)</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Any further comments, recommendations, or observations</label>
+      <textarea id="final_comments" placeholder="Please share any additional thoughts, concerns, or suggestions..." style="min-height:120px"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- NAV BAR -->
+<div id="nav-bar">
+  <button id="btn-prev" onclick="navPrev()" style="display:none">&#8592; Previous</button>
+  <span id="section-counter">1 / 9</span>
+  <button id="btn-next" onclick="navNext()">Next &#8594;</button>
+  <button id="btn-submit" style="display:none" onclick="submitForm()">Submit Assessment &#10003;</button>
+</div>
+
+<!-- SPINNER -->
+<div id="spinner">
+  <div id="spinner-box">
+    <div class="spin"></div>
+    <p>Submitting... please wait</p>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div id="success-screen">
+  <div class="tick">&#9989;</div>
+  <h2>Assessment Submitted!</h2>
+  <p>Thank you for completing the PNG Anaesthesia Facility Assessment.<br><br>
+  Your data has been securely recorded in the PNGSAI national database and will contribute to improving anaesthesia care across Papua New Guinea.<br><br>
+  For queries, please contact:<br>
+  <strong>Dr. Joel Silari</strong> (Lead Investigator) or <strong>Dr. Arvin Karu</strong> (Supervisor)<br>
+  Department of Anaesthesia &amp; ICU, PMGH</p>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwyGFi_DcTRlhl1RIELjGNRVJUHz17Zq8UUlnPNqPcIHXrEmMi1Sau6iPDGd-wSosm4Fw/exec';
+const TOTAL = 9;
+let current = 0;
+
+function goTo(idx) {
+  if (idx < 0 || idx >= TOTAL) return;
+  document.querySelectorAll('.section').forEach((s,i) => s.classList.toggle('active', i===idx));
+  document.querySelectorAll('#tab-wrap button').forEach((b,i) => b.classList.toggle('active', i===idx));
+  current = idx;
+  updateNav();
+  window.scrollTo(0, 0);
+}
+
+function updateNav() {
+  const pct = Math.round(((current+1)/TOTAL)*100);
+  document.getElementById('progress-label').textContent = 'Section '+(current+1)+' of '+TOTAL+' — '+pct+'%';
+  document.getElementById('progress-bar-inner').style.width = pct+'%';
+  document.getElementById('section-counter').textContent = (current+1)+' / '+TOTAL;
+  document.getElementById('btn-prev').style.display = current===0 ? 'none' : '';
+  document.getElementById('btn-next').style.display = current===TOTAL-1 ? 'none' : '';
+  document.getElementById('btn-submit').style.display = current===TOTAL-1 ? '' : 'none';
+}
+
+function navNext() {
+  if (current===0 && !validateSection0()) return;
+  goTo(current+1);
+}
+function navPrev() { goTo(current-1); }
+
+function validateSection0() {
+  let ok = true;
+  ['assess_date','assessor_name','province','facility_name'].forEach(id => {
+    const el = document.getElementById(id);
+    const wrap = document.getElementById('f-'+id);
+    if (!el.value.trim()) { if(wrap) wrap.classList.add('invalid'); ok=false; }
+    else { if(wrap) wrap.classList.remove('invalid'); }
+  });
+  const levelOk = !!document.querySelector('input[name="facility_level"]:checked');
+  document.getElementById('err-level').style.display = levelOk ? 'none' : 'block';
+  if (!levelOk) ok = false;
+  if (!ok) window.scrollTo(0,0);
+  return ok;
+}
+
+function getVal(id) { const e=document.getElementById(id); return e?e.value:''; }
+function getRadio(name) { const e=document.querySelector('input[name="'+name+'"]:checked'); return e?e.value:''; }
+function getChecks(name) { return Array.from(document.querySelectorAll('input[name="'+name+'"]:checked')).map(e=>e.value).join('; '); }
+
+function collectData() {
+  return {
+    timestamp: new Date().toISOString(),
+    assess_date:getVal('assess_date'), assessor_name:getVal('assessor_name'),
+    assessor_role:getVal('assessor_role'), assessor_phone:getVal('assessor_phone'),
+    assessor_email:getVal('assessor_email'), province:getVal('province'),
+    facility_name:getVal('facility_name'), facility_town:getVal('facility_town'),
+    facility_level:getRadio('facility_level'), facility_type:getChecks('facility_type'),
+    catchment_pop:getVal('catchment_pop'), travel_time_hrs:getVal('travel_time_hrs'),
+    referrals_per_year:getVal('referrals_per_year'), access_2hr:getRadio('access_2hr'),
+    age_range:getChecks('age_range'), transfer_capability:getRadio('transfer_capability'),
+    accepts_transfers:getRadio('accepts_transfers'), general_comments:getVal('general_comments'),
+    ot_total:getVal('ot_total'), ot_functional:getVal('ot_functional'),
+    ot_ga_capable:getVal('ot_ga_capable'), ot_24hr:getRadio('ot_24hr'),
+    ot_days_per_week:getVal('ot_days_per_week'), pacu_available:getRadio('pacu_available'),
+    pacu_beds:getVal('pacu_beds'), pacu_nurse:getRadio('pacu_nurse'),
+    icu_available:getRadio('icu_available'), icu_beds:getVal('icu_beds'),
+    icu_vent_beds:getVal('icu_vent_beds'), electricity:getRadio('electricity'),
+    piped_o2:getRadio('piped_o2'), running_water:getRadio('running_water'),
+    med_storage:getRadio('med_storage'), blood_bank:getRadio('blood_bank'),
+    infra_comments:getVal('infra_comments'),
+    wf_specialist:getVal('wf_specialist'), specialist_national:getRadio('specialist_national'),
+    wf_mo:getVal('wf_mo'), wf_ao:getVal('wf_ao'), wf_nurse:getVal('wf_nurse'),
+    wf_trainees:getVal('wf_trainees'), oncall_24hr:getRadio('oncall_24hr'),
+    primary_provider:getRadio('primary_provider'), vacancies:getRadio('vacancies'),
+    cme_recent:getRadio('cme_recent'), workforce_comments:getVal('workforce_comments'),
+    m_halothane:getVal('m_halothane'), m_isoflurane:getVal('m_isoflurane'),
+    m_sevoflurane:getVal('m_sevoflurane'), m_n2o:getVal('m_n2o'),
+    m_ketamine:getVal('m_ketamine'), m_propofol:getVal('m_propofol'),
+    m_thiopentone:getVal('m_thiopentone'), m_midazolam:getVal('m_midazolam'),
+    m_sux:getVal('m_sux'), m_vecuronium:getVal('m_vecuronium'),
+    m_atracurium:getVal('m_atracurium'), m_rocuronium:getVal('m_rocuronium'),
+    m_morphine:getVal('m_morphine'), m_pethidine:getVal('m_pethidine'),
+    m_fentanyl:getVal('m_fentanyl'), m_tramadol:getVal('m_tramadol'),
+    m_neostigmine:getVal('m_neostigmine'), m_atropine:getVal('m_atropine'),
+    m_flumazenil:getVal('m_flumazenil'), m_naloxone:getVal('m_naloxone'),
+    m_sugammadex:getVal('m_sugammadex'), m_lignocaine:getVal('m_lignocaine'),
+    m_bupivacaine:getVal('m_bupivacaine'), m_ropivacaine:getVal('m_ropivacaine'),
+    m_adrenaline:getVal('m_adrenaline'), m_ephedrine:getVal('m_ephedrine'),
+    m_metaraminol:getVal('m_metaraminol'), m_norad:getVal('m_norad'),
+    m_hydrocortisone:getVal('m_hydrocortisone'), m_oxytocin:getVal('m_oxytocin'),
+    m_ivfluids:getVal('m_ivfluids'), m_dextrose50:getVal('m_dextrose50'),
+    m_mgso4:getVal('m_mgso4'), m_diazepam:getVal('m_diazepam'),
+    med_supply:getRadio('med_supply'), med_comments:getVal('med_comments'),
+    eq_machine:getVal('eq_machine'), eq_machine_n:getVal('eq_machine_n'),
+    eq_drawover:getVal('eq_drawover'), eq_drawover_n:getVal('eq_drawover_n'),
+    eq_o2conc:getVal('eq_o2conc'), eq_o2conc_n:getVal('eq_o2conc_n'),
+    eq_o2cyl:getVal('eq_o2cyl'), eq_ventilator:getVal('eq_ventilator'),
+    eq_vent_n:getVal('eq_vent_n'), eq_laryngoscope:getVal('eq_laryngoscope'),
+    eq_ett:getVal('eq_ett'), eq_lma:getVal('eq_lma'), eq_opa:getVal('eq_opa'),
+    eq_npa:getVal('eq_npa'), eq_bvm:getVal('eq_bvm'), eq_masks:getVal('eq_masks'),
+    eq_stylet:getVal('eq_stylet'), eq_suction:getVal('eq_suction'),
+    eq_ivaccess:getVal('eq_ivaccess'), eq_pump:getVal('eq_pump'),
+    eq_warmer:getVal('eq_warmer'), eq_spinal:getVal('eq_spinal'),
+    eq_epidural:getVal('eq_epidural'), eq_block_needles:getVal('eq_block_needles'),
+    eq_us_block:getVal('eq_us_block'), equip_comments:getVal('equip_comments'),
+    mon_spo2:getVal('mon_spo2'), mon_spo2_n:getVal('mon_spo2_n'),
+    mon_nibp:getVal('mon_nibp'), mon_nibp_n:getVal('mon_nibp_n'),
+    mon_ecg:getVal('mon_ecg'), mon_ecg_n:getVal('mon_ecg_n'),
+    mon_etco2:getVal('mon_etco2'), mon_etco2_n:getVal('mon_etco2_n'),
+    mon_temp:getVal('mon_temp'), mon_temp_n:getVal('mon_temp_n'),
+    mon_ibp:getVal('mon_ibp'), mon_cvp:getVal('mon_cvp'), mon_pns:getVal('mon_pns'),
+    mon_bis:getVal('mon_bis'), mon_gasanalyser:getVal('mon_gasanalyser'),
+    mon_paed_spo2:getVal('mon_paed_spo2'), who_monitoring:getRadio('who_monitoring'),
+    monitoring_comments:getVal('monitoring_comments'),
+    emg_defib:getVal('emg_defib'), emg_crash:getVal('emg_crash'),
+    emg_chest_drain:getVal('emg_chest_drain'), emg_io:getVal('emg_io'),
+    emg_daw:getVal('emg_daw'), emg_vl:getVal('emg_vl'), emg_fob:getVal('emg_fob'),
+    emg_cric:getVal('emg_cric'), emg_mgso4:getVal('emg_mgso4'),
+    emg_neonatal:getVal('emg_neonatal'), emg_warming:getVal('emg_warming'),
+    cico_protocol:getRadio('cico_protocol'), mh_protocol:getRadio('mh_protocol'),
+    blood_transfusion:getRadio('blood_transfusion'), emergency_comments:getVal('emergency_comments'),
+    vol_total:getVal('vol_total'), vol_emergency:getVal('vol_emergency'),
+    vol_elective:getVal('vol_elective'), vol_cs:getVal('vol_cs'),
+    vol_obs_other:getVal('vol_obs_other'), vol_paed:getVal('vol_paed'),
+    vol_neonatal:getVal('vol_neonatal'), vol_abdo:getVal('vol_abdo'),
+    vol_ortho:getVal('vol_ortho'), vol_urology:getVal('vol_urology'),
+    vol_ent:getVal('vol_ent'), vol_cts:getVal('vol_cts'), vol_neuro:getVal('vol_neuro'),
+    vol_ga_inhal:getVal('vol_ga_inhal'), vol_ga_tiva:getVal('vol_ga_tiva'),
+    vol_spinal:getVal('vol_spinal'), vol_epidural:getVal('vol_epidural'),
+    vol_block:getVal('vol_block'), vol_ketamine:getVal('vol_ketamine'),
+    vol_la_only:getVal('vol_la_only'), logbook:getRadio('logbook'),
+    volume_comments:getVal('volume_comments'),
+    who_ssc:getRadio('who_ssc'), preop_form:getRadio('preop_form'),
+    anaes_record:getRadio('anaes_record'), mm_meetings:getRadio('mm_meetings'),
+    incident_reporting:getRadio('incident_reporting'),
+    protocols_available:getRadio('protocols_available'),
+    ae_death:getVal('ae_death'), ae_major:getVal('ae_major'),
+    ae_drug:getVal('ae_drug'), ae_awareness:getVal('ae_awareness'),
+    ae_daw:getVal('ae_daw'), ponv:getRadio('ponv'),
+    pain_management:getRadio('pain_management'), training_prog:getRadio('training_prog'),
+    simulation:getRadio('simulation'), biggest_challenge:getRadio('biggest_challenge'),
+    final_comments:getVal('final_comments')
+  };
+}
+
+function submitForm() {
+  const data = collectData();
+  document.getElementById('spinner').style.display = 'flex';
+  fetch(SCRIPT_URL, {
+    method:'POST', mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(data)
+  })
+  .then(() => {
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('success-screen').style.display = 'flex';
+  })
+  .catch(() => {
+    document.getElementById('spinner').style.display = 'none';
+    alert('Submission failed. Please check your internet connection and try again. If the problem persists, contact Dr. Joel Silari.');
+  });
+}
+
+updateNav();
+</script>
+</body>
+</html>
